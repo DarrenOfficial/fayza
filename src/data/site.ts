@@ -2,9 +2,22 @@ export const SITE = {
   name: 'shattered poise,',
   author: 'Fayza Divanti',
   tagline: 'worn by time, yet unfurling in the ruins',
-  url: 'https://sorrowflux.com',
+  url: 'https://www.sorrowflux.com',
+  x: '@woesarrc',
   description:
-    'shattered poise, — essays and prose poems by Fayza Divanti, on grief, tenderness, and the politics of being a woman. in english and bahasa indonesia.',
+    'shattered poise, | essays and prose poems by Fayza Divanti, on grief, tenderness, and the politics of being a woman. in english and bahasa indonesia.',
+};
+
+/** Share card size (the 1.91:1 link-preview shape). */
+export const CARD = { width: 1200, height: 630 } as const;
+
+/** schema.org identity, shared by the Wall, about and every Piece. */
+export const PERSON = {
+  '@type': 'Person',
+  '@id': `${SITE.url}/about/#person`,
+  name: SITE.author,
+  url: `${SITE.url}/about/`,
+  sameAs: ['https://x.com/woesarrc', 'https://x.com/etoixl', 'https://sorrowflux.substack.com'],
 };
 
 export const SHELVES = {

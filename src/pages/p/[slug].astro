@@ -1,9 +1,10 @@
 ---
-import { Image, getImage } from 'astro:assets';
+import { Image } from 'astro:assets';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Ink from '../../components/Ink.astro';
-import { SHELVES, fmtDate, pad } from '../../data/site';
+import { SITE, SHELVES, PERSON, fmtDate, pad } from '../../data/site';
+import { excerpt } from '../../lib/excerpt';
 
 export async function getStaticPaths() {
   const pieces = (await getCollection('pieces')).sort((a, b) => a.data.no - b.data.no);
@@ -21,7 +22,27 @@ interface Props {
 const { piece, older, newer } = Astro.props;
 const d = piece.data;
 const { Content } = await render(piece);
-const og = await getImage({ src: d.cover, width: Math.min(1200, d.cover.width), format: 'jpg' });
+const description = d.subtitle ?? excerpt(piece.body ?? '');
+const shareCard = `/og/p/${piece.id}.png`;
+const url = new URL(`/p/${piece.id}/`, SITE.url).href;
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    '@id': `${url}#article`,
+    headline: d.title,
+    description,
+    url,
+    mainEntityOfPage: url,
+    image: new URL(shareCard, SITE.url).href,
+    datePublished: d.date.toISOString(),
+    inLanguage: d.lang,
+    articleSection: SHELVES[d.shelf].label,
+    author: PERSON,
+    isPartOf: { '@type': 'WebSite', '@id': `${SITE.url}/#website`, name: SITE.name, url: `${SITE.url}/` },
+    sameAs: d.substack,
+  },
+];
 const words = (piece.body ?? '').split(/\s+/).filter(Boolean).length;
 const minutes = Math.max(1, Math.round(words / 230));
 // Editorial title: first half of the words in italic, the rest upright on a new line.
@@ -33,7 +54,16 @@ const size = d.title.length > 90 ? 'xl' : d.title.length > 45 ? 'l' : 'm';
 const topline = [`no. ${pad(d.no)}`, d.lang === 'id' ? 'bahasa' : 'english', SHELVES[d.shelf].label, fmtDate(d.date), `${minutes} min`];
 ---
 
-<Base title={d.title} description={d.subtitle ?? `${d.title} — a piece by Fayza Divanti.`} image={og.src} lang={d.lang} type="article">
+<Base
+  title={d.title}
+  description={description}
+  image={shareCard}
+  imageAlt={`${d.title}, a piece by ${SITE.author}`}
+  lang={d.lang}
+  type="article"
+  published={d.date}
+  schema={schema}
+>
   <header class="cover-hero" lang={d.lang}>
     <Image class="cover-img" src={d.cover} alt={d.coverAlt} widths={[640, 960, 1280, 1600]} sizes="100vw" loading="eager" fetchpriority="high" />
     <span class="scrim" aria-hidden="true"></span>
@@ -58,7 +88,7 @@ const topline = [`no. ${pad(d.no)}`, d.lang === 'id' ? 'bahasa' : 'english', SHE
     </div>
 
     <p class="fin hand" aria-hidden="true">
-      — f.
+      f.
       <Ink kind="underline" class="fin-ink" delay={0} />
     </p>
   </article>

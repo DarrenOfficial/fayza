@@ -6,7 +6,7 @@ import PieceCard from '../components/PieceCard.astro';
 import Ink from '../components/Ink.astro';
 import Twigs from '../components/Twigs.astro';
 import Lily from '../components/Lily.astro';
-import { SITE, SHELVES, QUOTES, type ShelfId } from '../data/site';
+import { SITE, SHELVES, QUOTES, PERSON, type ShelfId } from '../data/site';
 import portrait from '../assets/portrait-bw.png';
 import ophelia from '../assets/art/ophelia.jpg';
 import { WAVE_TILE } from '../lib/wave';
@@ -37,12 +37,25 @@ pieces.forEach((piece, i) => {
   const lily = LILIES.findIndex((l) => l.after === i);
   if (lily >= 0) slots.push({ kind: 'lily', lily: LILIES[lily], n: lily });
 });
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE.url}/#website`,
+    name: SITE.name,
+    url: `${SITE.url}/`,
+    description: SITE.description,
+    inLanguage: ['en', 'id'],
+    author: PERSON,
+  },
+  { '@context': 'https://schema.org', ...PERSON },
+];
 const QROT = [2.2, -1.8, 1.2, -2.4, 1.6];
 const INK = ['underline', 'heart', 'star', 'swirl', 'cross'] as const;
 const LROT = [-8, 10, -4, 6];
 ---
 
-<Base>
+<Base schema={schema}>
   <section class="intro" aria-labelledby="masthead">
     <div class="hero">
       <div class="art">
@@ -60,7 +73,7 @@ const LROT = [-8, 10, -4, 6];
       </div>
 
       <div class="masthead">
-        <p class="mono kicker">sorrowflux.com — an archive in two languages</p>
+        <p class="mono kicker">sorrowflux.com | an archive in two languages</p>
         <h1 id="masthead" class="hand">shattered<br /><span class="poise">poise,</span></h1>
       </div>
 
@@ -68,7 +81,7 @@ const LROT = [-8, 10, -4, 6];
         <Twigs seed={3} />
         <span class="tape" aria-hidden="true"></span>
         <Image src={portrait} alt="Fayza, a black-and-white self-portrait" widths={[280, 420, 560]} sizes="(max-width: 720px) 44vw, 260px" loading="eager" />
-        <figcaption class="mono">fig. 00 — fay</figcaption>
+        <figcaption class="mono">fig. 00 | fay</figcaption>
       </figure>
     </div>
 
@@ -112,7 +125,7 @@ const LROT = [-8, 10, -4, 6];
           <li class="quote" style={`--r:${QROT[s.n % QROT.length]}deg`} data-shelf={p?.data.shelf}>
             <a href={`/p/${s.q.slug}`}>
               <blockquote class="hand" lang={s.q.lang ?? 'en'}>“{s.q.text}”</blockquote>
-              <span class="mono">fig. {String(s.n + 1).padStart(2, '0')} — from no. {String(p?.data.no ?? 0).padStart(3, '0')}</span>
+              <span class="mono">fig. {String(s.n + 1).padStart(2, '0')} | from no. {String(p?.data.no ?? 0).padStart(3, '0')}</span>
             </a>
             <Ink kind={INK[s.n % INK.length]} class="quote-ink" delay={200} />
           </li>

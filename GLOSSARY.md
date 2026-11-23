@@ -44,3 +44,7 @@ _Avoid_: feed, blog, archive, index
 **Fig. label**:
 The small numbered mono caption (for example "FIG. 07" or "NO. 012") pinned beside an image or card on the Wall.
 _Avoid_: badge, tag
+
+**Share card**:
+The image a link preview shows when a page is shared, for example on X. Every page has its own. A Piece's Share card pins its Cover on paper beside the title.
+_Avoid_: OG image, thumbnail, preview image

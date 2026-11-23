@@ -1,20 +1,37 @@
 ---
 import '../styles/global.css';
-import { SITE, LINKS } from '../data/site';
+import { SITE, LINKS, CARD } from '../data/site';
 import LaceHem from '../components/LaceHem.astro';
 
 interface Props {
   title?: string;
   description?: string;
+  /** Share card path, e.g. `/og/p/slug.png`. Defaults to the Wall's. */
   image?: string;
+  imageAlt?: string;
   lang?: string;
   noindex?: boolean;
   type?: 'website' | 'article';
+  /** Article dates for `article:*` meta. */
+  published?: Date;
+  /** JSON-LD objects for this page. */
+  schema?: object[];
 }
-const { title, description = SITE.description, image, lang = 'en', noindex = false, type = 'website' } = Astro.props;
-const fullTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.author}`;
+const {
+  title,
+  description = SITE.description,
+  image = '/og/index.png',
+  imageAlt = `${SITE.name} by ${SITE.author}`,
+  lang = 'en',
+  noindex = false,
+  type = 'website',
+  published,
+  schema = [],
+} = Astro.props;
+const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.author}`;
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
-const ogImage = image ? new URL(image, SITE.url).href : undefined;
+const ogImage = new URL(image, SITE.url).href;
+const ogLocale = lang === 'id' ? 'id_ID' : 'en_US';
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
@@ -33,8 +50,22 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     <meta property="og:title" content={title ?? SITE.name} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
-    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={lang === 'id' ? 'en_US' : 'id_ID'} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(CARD.width)} />
+    <meta property="og:image:height" content={String(CARD.height)} />
+    <meta property="og:image:alt" content={imageAlt} />
+    {published && <meta property="article:published_time" content={published.toISOString()} />}
+    {type === 'article' && <meta property="article:author" content={new URL('/about/', SITE.url).href} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content={SITE.x} />
+    <meta name="twitter:creator" content={SITE.x} />
+    <meta name="twitter:title" content={title ?? SITE.name} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={imageAlt} />
     <meta name="author" content={SITE.author} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <!-- fonts: Bunny Fonts (privacy-friendly, no tracking) -->
@@ -44,12 +75,13 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
       href="https://fonts.bunny.net/css?family=caveat:400,500,600|cormorant-garamond:400,400i,500,500i,600|jetbrains-mono:400&display=swap"
     />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    {schema.length > 0 && <script type="application/ld+json" set:html={JSON.stringify(schema.length === 1 ? schema[0] : schema)} />}
     <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">skip to content</a>
     <header class="site-header">
-      <a class="home hand" href="/" aria-label={`${SITE.name} — home`}>{SITE.name}</a>
+      <a class="home hand" href="/" aria-label={`${SITE.name} home`}>{SITE.name}</a>
       <nav class="mono" aria-label="site">
         <a href="/" aria-current={path === '/' ? 'page' : undefined}>wall</a>
         <a href="/about" aria-current={path === '/about' ? 'page' : undefined}>about</a>

@@ -18,7 +18,12 @@ const LINES = ['how-could-i-have-been-so-tender-with', 'i-release-you-gently', '
   .filter((l) => l.q && l.p);
 ---
 
-<Base title="about" description={`${SITE.name} — ${SITE.tagline}. Fayza Divanti, in her own words.`}>
+<Base
+  title="about"
+  description={`${SITE.name} | ${SITE.tagline}. Fayza Divanti, in her own words.`}
+  image="/og/about.png"
+  imageAlt="Fayza Divanti, in her own words"
+>
   <link slot="head" rel="stylesheet" href="https://fonts.bunny.net/css?family=pinyon-script:400&display=swap" />
   <article class="plate" aria-labelledby="who">
     <div class="ghost" aria-hidden="true">shattered<br />poise,</div>

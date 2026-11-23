@@ -1,4 +1,4 @@
-# sorrowflux.com: shattered poise,
+# www.sorrowflux.com: shattered poise,
 
 Astro static site for Fayza Divanti's writing. Terms are defined in [GLOSSARY.md](./GLOSSARY.md).
 
@@ -22,5 +22,8 @@ Pull-quotes, links and Shelf names are in `src/data/site.ts`.
 - About page: Pinyon Script (the ghost script behind everything), from Bunny Fonts.
 - Calla lilies (`src/assets/lilies/`) are cut from Abraham Bosse's *Calla Aethiopica* engraving (1640, public domain, via Wikimedia Commons), printed in moss ink.
 
+## Share cards
+Every page gets a 1200×630 Share card (`/og/index.png`, `/og/about.png`, `/og/p/<slug>.png`). They are drawn at build time by `src/lib/share-card.ts` (satori → resvg, with the fonts taken from `@fontsource`). A new Piece gets its card automatically from its Cover and title. Meta tags and JSON-LD are set in `src/layouts/Base.astro`.
+
 ## Deploy (Cloudflare Pages)
-Framework preset: Astro · build command `npm run build` · output `dist` · then add the custom domain sorrowflux.com.
+Framework preset: Astro · build command `npm run build` · output `dist` · custom domain **www.sorrowflux.com** (canonical: `SITE.url`, astro `site`, sitemap and robots.txt all point at www). The apex → www redirect is handled in Cloudflare, not in this repo.
