@@ -44,6 +44,7 @@ const schema = [
   },
 ];
 const words = (piece.body ?? '').split(/\s+/).filter(Boolean).length;
+const published = d.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).toLowerCase();
 const minutes = Math.max(1, Math.round(words / 230));
 // Editorial title: first half of the words in italic, the rest upright on a new line.
 const titleWords = d.title.split(/\s+/);
@@ -77,6 +78,9 @@ const topline = [`no. ${pad(d.no)}`, d.lang === 'id' ? 'bahasa' : 'english', SHE
   </header>
 
   <article class="piece" lang={d.lang}>
+    <p class="dateline">
+      published <time datetime={d.date.toISOString()}>{published}</time> · {minutes} min read
+    </p>
     <p class="labels">
       <span>( no. <em>{pad(d.no)}</em> )</span>
       <a href={`/?shelf=${d.shelf}`}>( <em>{SHELVES[d.shelf].label}</em> )</a>
@@ -216,6 +220,18 @@ const topline = [`no. ${pad(d.no)}`, d.lang === 'id' ? 'bahasa' : 'english', SHE
     .piece {
       margin: 24px 10px 0;
     }
+  }
+  .dateline {
+    margin: 0 0 14px;
+    text-align: center;
+    font-family: var(--f-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .dateline time {
+    color: var(--rose-deep);
   }
   .labels {
     display: flex;
