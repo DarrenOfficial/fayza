@@ -1,0 +1,25 @@
+{
+  "name": "sorrowflux",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev --host",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.6",
+    "astro": "^5.18.2",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "turndown": "^7.2.5"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "sharp@0.35.5": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.25.12": true
+  }
+}

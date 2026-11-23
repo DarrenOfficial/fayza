@@ -1,0 +1,491 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PieceCard from '../components/PieceCard.astro';
+import Ink from '../components/Ink.astro';
+import Twigs from '../components/Twigs.astro';
+import Lily from '../components/Lily.astro';
+import { SITE, SHELVES, QUOTES, type ShelfId } from '../data/site';
+import portrait from '../assets/portrait-bw.png';
+import ophelia from '../assets/art/ophelia.jpg';
+import { WAVE_TILE } from '../lib/wave';
+
+const pieces = (await getCollection('pieces')).sort((a, b) => b.data.no - a.data.no);
+const bySlug = new Map(pieces.map((p) => [p.id, p]));
+const counts = Object.fromEntries(
+  (Object.keys(SHELVES) as ShelfId[]).map((s) => [s, pieces.filter((p) => p.data.shelf === s).length]),
+);
+
+// The Wall: cards, a handwritten note after every 4th, and pressed lilies tucked in between.
+const LILIES = [
+  { after: 2, kind: 'stem', flip: false },
+  { after: 8, kind: 'pair', flip: true },
+  { after: 13, kind: 'plant', flip: false },
+  { after: 18, kind: 'stem', flip: true },
+] as const;
+type Piece = (typeof pieces)[number];
+type Slot =
+  | { kind: 'piece'; piece: Piece; i: number }
+  | { kind: 'quote'; q: (typeof QUOTES)[number]; n: number }
+  | { kind: 'lily'; lily: (typeof LILIES)[number]; n: number };
+const slots: Slot[] = [];
+let qn = 0;
+pieces.forEach((piece, i) => {
+  slots.push({ kind: 'piece', piece, i });
+  if ((i + 1) % 4 === 0 && qn < QUOTES.length) slots.push({ kind: 'quote', q: QUOTES[qn], n: qn++ });
+  const lily = LILIES.findIndex((l) => l.after === i);
+  if (lily >= 0) slots.push({ kind: 'lily', lily: LILIES[lily], n: lily });
+});
+const QROT = [2.2, -1.8, 1.2, -2.4, 1.6];
+const INK = ['underline', 'heart', 'star', 'swirl', 'cross'] as const;
+const LROT = [-8, 10, -4, 6];
+---
+
+<Base>
+  <section class="intro" aria-labelledby="masthead">
+    <div class="hero">
+      <div class="art">
+        <Image class="soft" src={ophelia} alt="" aria-hidden="true" widths={[480]} sizes="480px" loading="eager" />
+        <Image
+          class="paint"
+          src={ophelia}
+          alt="Ophelia floating among flowers in a green stream, painted by John Everett Millais"
+          widths={[640, 960, 1280]}
+          sizes="100vw"
+          loading="eager"
+          fetchpriority="high"
+        />
+        <span class="wave" aria-hidden="true" style={`--wave:${WAVE_TILE}`}></span>
+      </div>
+
+      <div class="masthead">
+        <p class="mono kicker">sorrowflux.com — an archive in two languages</p>
+        <h1 id="masthead" class="hand">shattered<br /><span class="poise">poise,</span></h1>
+      </div>
+
+      <figure class="portrait photo">
+        <Twigs seed={3} />
+        <span class="tape" aria-hidden="true"></span>
+        <Image src={portrait} alt="Fayza, a black-and-white self-portrait" widths={[280, 420, 560]} sizes="(max-width: 720px) 44vw, 260px" loading="eager" />
+        <figcaption class="mono">fig. 00 — fay</figcaption>
+      </figure>
+    </div>
+
+    <div class="under">
+      <p class="byline mono">by {SITE.author}</p>
+      <p class="tagline">{SITE.tagline}</p>
+      <p class="credit mono">painting: millais, ophelia, 1851–52</p>
+    </div>
+  </section>
+
+  <nav class="shelves" aria-label="filter by shelf">
+    <p class="mono shelves-label" id="shelves-label">shelves</p>
+    <div class="shelf-list" role="group" aria-labelledby="shelves-label">
+      <button type="button" class="shelf hand" data-filter="all" aria-pressed="true">
+        everything <sup class="mono">{pieces.length}</sup>
+        <Ink kind="underline" class="shelf-mark" draw={false} />
+      </button>
+      {
+        (Object.entries(SHELVES) as [ShelfId, (typeof SHELVES)[ShelfId]][]).map(([id, s]) => (
+          <button type="button" class="shelf hand" data-filter={id} aria-pressed="false" title={s.note}>
+            {s.label} <sup class="mono">{counts[id]}</sup>
+            <Ink kind="underline" class="shelf-mark" draw={false} />
+          </button>
+        ))
+      }
+    </div>
+  </nav>
+
+  <ol class="wall" data-filter="all" aria-label="pieces, newest first">
+    {
+      slots.map((s) => {
+        if (s.kind === 'piece') return <PieceCard piece={s.piece} i={s.i} />;
+        if (s.kind === 'lily')
+          return (
+            <li class:list={['lily-slot', `lily-${s.lily.kind}`]} aria-hidden="true" style={`--lr:${LROT[s.n % LROT.length]}deg`}>
+              <Lily kind={s.lily.kind} flip={s.lily.flip} />
+            </li>
+          );
+        const p = bySlug.get(s.q.slug);
+        return (
+          <li class="quote" style={`--r:${QROT[s.n % QROT.length]}deg`} data-shelf={p?.data.shelf}>
+            <a href={`/p/${s.q.slug}`}>
+              <blockquote class="hand" lang={s.q.lang ?? 'en'}>“{s.q.text}”</blockquote>
+              <span class="mono">fig. {String(s.n + 1).padStart(2, '0')} — from no. {String(p?.data.no ?? 0).padStart(3, '0')}</span>
+            </a>
+            <Ink kind={INK[s.n % INK.length]} class="quote-ink" delay={200} />
+          </li>
+        );
+      })
+    }
+  </ol>
+  <p class="empty mono" hidden>nothing on this shelf yet.</p>
+</Base>
+
+<style>
+  /* ── intro: full-bleed painting that blurs into the paper ── */
+  .intro {
+    position: relative;
+  }
+  .hero {
+    position: relative;
+    height: clamp(460px, 50vw, 660px);
+  }
+  .art {
+    position: absolute;
+    inset: 0 0 -120px 0; /* the fade finishes on the paper, not at a hard edge */
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .art :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 22% 55%;
+  }
+  /* sharp painting, fading out toward the bottom */
+  .art :global(.paint) {
+    -webkit-mask-image: linear-gradient(#000 46%, transparent 76%);
+    mask-image: linear-gradient(#000 46%, transparent 76%);
+  }
+  /* blurred copy that carries the colour softly into the paper */
+  .art :global(.soft) {
+    filter: blur(18px) saturate(1.1);
+    scale: 1.08;
+    opacity: 0.75;
+    -webkit-mask-image: linear-gradient(transparent 36%, #000 58%, transparent 92%);
+    mask-image: linear-gradient(transparent 36%, #000 58%, transparent 92%);
+  }
+  .wave {
+    position: absolute;
+    inset: 16px 16px 40% 16px;
+    border: 30px solid transparent;
+    border-image: var(--wave) 30 / 30px round;
+    pointer-events: none;
+    filter: drop-shadow(0 0 1px rgba(30, 30, 20, 0.35));
+  }
+  .masthead {
+    position: absolute;
+    left: max(var(--gutter), calc((100% - 1280px) / 2 + var(--gutter)));
+    top: clamp(44px, 5vw, 80px);
+    padding-left: clamp(8px, 2vw, 28px);
+    color: #fffdf6;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+  }
+  .kicker {
+    margin: 0 0 14px;
+    color: #fffdf6;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(4rem, 8.6vw, 7.4rem);
+    font-weight: 400;
+    line-height: 0.84;
+    letter-spacing: -0.01em;
+    color: #fffdf6;
+  }
+  h1 .poise {
+    margin-left: 0.35em;
+    color: var(--title-red);
+    text-shadow: 0 0 22px rgba(255, 250, 240, 0.55), 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+  .under {
+    position: relative;
+    max-width: 1280px;
+    margin: calc(-1 * clamp(30px, 3vw, 50px)) auto 0;
+    padding: 0 var(--gutter) clamp(28px, 4vw, 52px) calc(var(--gutter) + clamp(8px, 2vw, 28px));
+  }
+  .under p {
+    text-shadow: 0 0 10px var(--paper), 0 0 2px var(--paper);
+  }
+  .byline {
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .tagline {
+    margin: 0;
+    font-style: italic;
+    color: var(--ink-soft);
+    max-width: 30ch;
+  }
+  .credit {
+    margin: 14px 0 0;
+    font-size: 0.58rem;
+    color: var(--ink-faint);
+  }
+  /* her polaroid, taped across the blurred edge */
+  .portrait {
+    position: absolute;
+    isolation: isolate;
+    z-index: 2;
+    right: max(calc(var(--gutter) + 4vw), calc((100% - 1280px) / 2 + var(--gutter) + 60px));
+    bottom: clamp(-40px, -3vw, -10px);
+    width: clamp(180px, 20vw, 260px);
+    rotate: 4deg;
+  }
+  .portrait :global(.twigs) {
+    z-index: -1;
+  }
+  .portrait img {
+    position: relative;
+    filter: contrast(1.05);
+  }
+  .portrait .tape {
+    top: -10px;
+    left: 22%;
+    rotate: -10deg;
+  }
+  .portrait figcaption {
+    position: relative;
+    margin-top: 6px;
+    font-size: 0.64rem;
+  }
+
+  /* ── shelves (filter) ── */
+  .shelves {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 12px var(--gutter) 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 22px;
+    border-top: 1px dashed var(--rule);
+  }
+  .shelves-label {
+    margin: 0;
+  }
+  .shelf-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 18px;
+  }
+  .shelf {
+    position: relative;
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 8px 6px;
+    min-height: 44px;
+    cursor: pointer;
+    font-size: 1.75rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    touch-action: manipulation;
+    user-select: none;
+    transition: color 160ms var(--ease-out), transform 120ms var(--ease-out);
+  }
+  .shelf:active {
+    transform: scale(0.96);
+  }
+  .shelf sup {
+    font-size: 0.6rem;
+    color: var(--ink-faint);
+  }
+  .shelf[aria-pressed='true'] {
+    color: var(--moss-deep);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .shelf:hover {
+      color: var(--moss);
+    }
+  }
+  /* active shelf: a short rose stroke underneath, never across the letters */
+  .shelf-mark {
+    left: 6px;
+    right: 14px;
+    width: auto;
+    bottom: 2px;
+    height: 8px;
+    opacity: 0;
+    color: var(--rose);
+  }
+  .shelf[aria-pressed='true'] .shelf-mark {
+    opacity: 1;
+  }
+  .shelf[aria-pressed='true'] .shelf-mark :global(path) {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .shelf[aria-pressed='true'] .shelf-mark :global(path) {
+      animation: ink-draw 420ms var(--ease-out) both;
+    }
+  }
+
+  /* ── the wall ── */
+  .wall {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(32px, 4vw, 56px) var(--gutter) 0;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    gap: clamp(32px, 3.6vw, 56px) clamp(20px, 3vw, 44px);
+    align-items: start;
+  }
+  .wall > :global([hidden]) {
+    display: none;
+  }
+  .quote {
+    list-style: none;
+    grid-column: span 3;
+    position: relative;
+    rotate: var(--r);
+    padding: 22px 8px 0 14px;
+    align-self: center;
+  }
+  .quote a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    touch-action: manipulation;
+  }
+  .quote blockquote {
+    margin: 0 0 10px;
+    color: var(--moss-deep);
+    font-size: 1.85rem;
+    font-weight: 500;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .quote a:hover blockquote {
+      color: var(--rose-deep);
+    }
+  }
+  .quote .mono {
+    font-size: 0.62rem;
+  }
+  .quote-ink {
+    width: 46px;
+    height: 34px;
+    top: -6px;
+    left: -10px;
+    color: var(--rose);
+  }
+
+  /* pressed lilies, tucked between cards */
+  .lily-slot {
+    list-style: none;
+    grid-column: span 2;
+    align-self: center;
+    rotate: var(--lr);
+    margin: -24px -30px;
+    opacity: 0.92;
+  }
+  .lily-plant {
+    grid-column: span 3;
+  }
+  .lily-slot :global(.lily) {
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 40px;
+  }
+
+  /* ── phone: stacked scrapbook ── */
+  @media (max-width: 720px) {
+    .hero {
+      height: 440px;
+    }
+    .art :global(img) {
+      object-position: 18% 50%;
+    }
+    .wave {
+      inset: 10px 10px 42% 10px;
+      border-width: 22px;
+      border-image-width: 22px;
+    }
+    .masthead {
+      top: 44px;
+    }
+    .portrait {
+      width: min(38vw, 160px);
+      right: 22px;
+      bottom: -34px;
+    }
+    .under {
+      margin-top: 8px;
+      padding-right: calc(min(38vw, 160px) + 36px);
+    }
+    .wall {
+      grid-template-columns: 1fr;
+      gap: 44px;
+    }
+    .quote {
+      grid-column: 1 / -1;
+      width: 88%;
+      justify-self: center;
+      rotate: calc(var(--r) * 0.6);
+    }
+    .lily-slot {
+      grid-column: 1 / -1;
+      width: 46%;
+      margin: -36px 0;
+      justify-self: end;
+    }
+    .lily-slot:nth-child(odd of .lily-slot) {
+      justify-self: start;
+    }
+    .shelf {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* paper motion: a quiet settle when filtering */
+  @keyframes settle {
+    from {
+      opacity: 0;
+      translate: 0 6px;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .wall :global(.just-shown) {
+      animation: settle 280ms var(--ease-out) both;
+    }
+  }
+</style>
+
+<script>
+  const wall = document.querySelector<HTMLOListElement>('.wall')!;
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('.shelf')];
+  const items = [...wall.querySelectorAll<HTMLLIElement>(':scope > li:not(.lily-slot)')];
+  const lilies = [...wall.querySelectorAll<HTMLLIElement>(':scope > .lily-slot')];
+  const empty = document.querySelector<HTMLElement>('.empty')!;
+
+  function apply(filter: string) {
+    let shown = 0;
+    for (const li of items) {
+      const show = filter === 'all' || li.dataset.shelf === filter;
+      li.hidden = !show;
+      li.classList.toggle('just-shown', show);
+      if (show) shown++;
+    }
+    // pressed lilies decorate the full Wall only; filtered views stay compact
+    lilies.forEach((l) => (l.hidden = filter !== 'all'));
+    empty.hidden = shown > 0;
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+    wall.dataset.filter = filter;
+  }
+
+  function choose(filter: string) {
+    const url = new URL(location.href);
+    if (filter === 'all') url.searchParams.delete('shelf');
+    else url.searchParams.set('shelf', filter);
+    history.replaceState(null, '', url);
+    apply(filter);
+  }
+
+  buttons.forEach((b) => b.addEventListener('click', () => choose(b.dataset.filter!)));
+  const initial = new URL(location.href).searchParams.get('shelf');
+  if (initial && buttons.some((b) => b.dataset.filter === initial)) apply(initial);
+</script>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /type-lab
+
+Sitemap: https://sorrowflux.com/sitemap-index.xml

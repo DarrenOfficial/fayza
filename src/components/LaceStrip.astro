@@ -1,0 +1,31 @@
+---
+/** A strip of lace trim pinning a photo, used in place of tape. */
+interface Props { class?: string; style?: string }
+const { class: cls = '', style = '', ...rest } = Astro.props;
+const W = 130, step = 10;
+let d = `M0 5 H${W} V19 `;
+for (let x = W; x > 0; x -= step) d += `Q ${x - step / 2} 31 ${x - step} 19 `;
+const holes = Array.from({ length: W / step }, (_, i) => i * step + step / 2);
+---
+
+<svg {...rest} class:list={['lace-strip', cls]} style={style} viewBox="0 0 130 30" aria-hidden="true">
+  <path d={d + 'Z'} fill="var(--lace)" stroke="rgba(110,92,64,.22)" stroke-width=".6"></path>
+  <line x1="0" y1="8" x2="130" y2="8" stroke="var(--lace-hole)" stroke-width=".6" stroke-dasharray="1.5 2"></line>
+  {holes.map((x) => <circle cx={x} cy="13" r="2.2" fill="var(--lace-hole)" />)}
+  {holes.map((x) => <circle cx={x} cy="22.5" r="1.1" fill="var(--lace-hole)" />)}
+</svg>
+
+<style>
+  .lace-strip {
+    position: absolute;
+    z-index: 2;
+    width: 118px;
+    height: 28px;
+    top: -13px;
+    left: 50%;
+    translate: -50% 0;
+    rotate: -4deg;
+    filter: drop-shadow(0 2px 1.5px rgba(60, 44, 24, 0.22));
+    pointer-events: none;
+  }
+</style>

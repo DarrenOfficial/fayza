@@ -1,0 +1,357 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Lily from '../components/Lily.astro';
+import Moth from '../components/Moth.astro';
+import { SITE, QUOTES, LINKS, LOGISMOS, pad } from '../data/site';
+import rug from '../assets/portrait-rug.png';
+import bw from '../assets/portrait-bw.png';
+
+const pieces = await getCollection('pieces');
+const bySlug = new Map(pieces.map((p) => [p.id, p]));
+// Short lines read best as scrawl.
+// Greek in brackets is set in the serif: the scrawl face has no Greek glyphs.
+const logismos = LOGISMOS.text.split(/(\([^)]*\))/).map((part) => ({ part, greek: /[\u0370-\u03ff]/.test(part) }));
+const LINES = ['how-could-i-have-been-so-tender-with', 'i-release-you-gently', 'where-healing-lingers']
+  .map((slug) => ({ q: QUOTES.find((q) => q.slug === slug)!, p: bySlug.get(slug)! }))
+  .filter((l) => l.q && l.p);
+---
+
+<Base title="about" description={`${SITE.name} — ${SITE.tagline}. Fayza Divanti, in her own words.`}>
+  <link slot="head" rel="stylesheet" href="https://fonts.bunny.net/css?family=pinyon-script:400&display=swap" />
+  <article class="plate" aria-labelledby="who">
+    <div class="ghost" aria-hidden="true">shattered<br />poise,</div>
+
+    <Moth class="m1" style="rotate:-14deg" />
+    <Moth class="m2" style="rotate:18deg;width:46px" />
+    <Moth class="m3" style="rotate:8deg;width:52px" />
+
+    <p class="scrawl tag-1" aria-hidden="true">worn by time,<br /><span class="echo">worn by time,</span></p>
+
+    <figure class="mini rug">
+      <Image src={rug} alt="Fayza lying on a patterned rug, eyes closed" widths={[240, 360, 480]} sizes="(max-width: 720px) 60vw, 240px" loading="eager" />
+    </figure>
+
+    <header class="crest">
+      <Lily kind="stem" class="crest-lily" />
+      <h1 id="who" class="scrawl name">FAYZA</h1>
+      <p class="mono">fayza divanti · {SITE.name}</p>
+    </header>
+
+    <figure class="mini bw">
+      <Image src={bw} alt="Fayza, a black-and-white self-portrait" widths={[200, 300, 400]} sizes="(max-width: 720px) 50vw, 190px" loading="lazy" />
+    </figure>
+
+    <p class="scrawl tag-2">
+      <span class="visually-hidden">{SITE.tagline}</span>
+      <span aria-hidden="true">yet unfurling<br /><span class="echo">unfurling</span><br /><span class="small">IN THE RUINS</span></span>
+    </p>
+
+    <ul class="lines" aria-label="lines from her pieces">
+      {
+        LINES.map(({ q, p }, n) => (
+          <li style={`--r:${[-3, 2, -1.5][n]}deg`}>
+            <a href={`/p/${p.id}`}>
+              <span class="scrawl" lang={q.lang ?? 'en'}>{q.text}</span>
+              <span class="mono">no. {pad(p.data.no)} →</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <blockquote class="logismos">
+      <p class="scrawl">{logismos.map((l) => (l.greek ? <span class="greek" lang="grc">{l.part}</span> : l.part))}</p>
+      <footer class="mono">{LOGISMOS.cite}</footer>
+    </blockquote>
+
+    <nav class="handles" aria-label="elsewhere">
+      {
+        LINKS.map((l) => (
+          <a href={l.href} rel="me noopener" target="_blank">
+            <span class="scrawl">{l.label}</span>
+            <span class="mono">{l.name} ↗</span>
+          </a>
+        ))
+      }
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .plate {
+    --scrawl: var(--f-hand);
+    --plate-ink: #2c3022;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    max-width: 1040px;
+    margin: clamp(28px, 5vw, 64px) auto 0;
+    padding: clamp(40px, 6vw, 76px) clamp(22px, 6vw, 76px) clamp(36px, 5vw, 64px);
+    background-color: #c9cfb4;
+    background-image: url('/textures/handwriting-plate.webp');
+    background-size: 520px auto;
+    box-shadow: var(--shadow);
+    color: var(--plate-ink);
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-areas:
+      'tag1 tag1 tag1 .    rug  rug'
+      '.    crest crest crest crest .'
+      'bw   bw   .    tag2 tag2 tag2'
+      'lines lines lines lines lines lines'
+      '.    logi logi logi logi .'
+      'hand hand hand hand hand hand';
+    row-gap: clamp(20px, 3vw, 36px);
+    column-gap: 16px;
+  }
+  /* fine double rule, like an old book plate */
+  .plate::before,
+  .plate::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid rgba(44, 48, 34, 0.7);
+    z-index: -1;
+  }
+  .plate::before {
+    inset: 12px;
+  }
+  .plate::after {
+    inset: 17px;
+    border-color: rgba(44, 48, 34, 0.38);
+  }
+  .scrawl {
+    font-family: var(--scrawl);
+    font-weight: 500;
+    line-height: 1.05;
+    color: var(--plate-ink);
+  }
+  .echo {
+    opacity: 0.5;
+    margin-left: 1.2em;
+  }
+  .ghost {
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    top: 40%;
+    text-align: center;
+    font-family: 'Pinyon Script', cursive;
+    font-size: clamp(5rem, 15vw, 11rem);
+    line-height: 0.88;
+    color: rgba(44, 48, 34, 0.14);
+    rotate: -8deg;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .plate :global(.moth) { z-index: 1; }
+  .plate :global(.m1) { left: 46%; top: 23%; }
+  .plate :global(.m2) { right: 9%; top: 52%; }
+  .plate :global(.m3) { left: 5%; top: 46%; }
+  .tag-1 {
+    grid-area: tag1;
+    margin: 0;
+    font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+    rotate: -2deg;
+  }
+  .tag-2 {
+    grid-area: tag2;
+    margin: 0;
+    text-align: right;
+    align-self: center;
+    font-size: clamp(2rem, 3.6vw, 2.8rem);
+    rotate: -3deg;
+  }
+  .tag-2 .small {
+    font-size: 0.6em;
+    letter-spacing: 0.08em;
+  }
+
+  /* small tarnished frames */
+  .mini {
+    margin: 0;
+    padding: 9px;
+    background: #8a8470;
+    box-shadow:
+      inset 0 0 0 2px #5d5946,
+      inset 0 0 0 4px #a49e86,
+      0 8px 16px -8px rgba(0, 0, 0, 0.5);
+    width: fit-content;
+  }
+  .mini img {
+    display: block;
+    filter: sepia(0.35) saturate(0.7) contrast(1.02);
+  }
+  .rug {
+    grid-area: rug;
+    justify-self: end;
+    rotate: 4deg;
+  }
+  .rug img {
+    width: clamp(170px, 22vw, 240px);
+  }
+  .bw {
+    grid-area: bw;
+    rotate: -5deg;
+    margin-top: -20px;
+  }
+  .bw img {
+    width: clamp(130px, 16vw, 180px);
+  }
+
+  .crest {
+    grid-area: crest;
+    text-align: center;
+    margin-top: -30px;
+  }
+  .crest :global(.crest-lily) {
+    width: clamp(90px, 12vw, 130px);
+    margin: 0 auto;
+  }
+  .name {
+    margin: -6px 0 4px;
+    font-size: clamp(3rem, 7vw, 4.6rem);
+    letter-spacing: 0.06em;
+  }
+  .crest .mono {
+    margin: 0;
+    color: #3d4231;
+  }
+
+  .lines {
+    grid-area: lines;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .lines li {
+    rotate: var(--r);
+  }
+  .lines li:nth-child(2) {
+    margin-top: 28px;
+  }
+  .lines a {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-decoration: none;
+    touch-action: manipulation;
+  }
+  .lines .scrawl {
+    font-size: 1.6rem;
+    transition: color 160ms var(--ease-out);
+  }
+  .lines .mono,
+  .handles .mono,
+  .logismos .mono {
+    font-size: 0.62rem;
+    color: #3d4231;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .lines a:hover .scrawl,
+    .handles a:hover .scrawl {
+      color: var(--rose-deep);
+    }
+  }
+
+  .logismos {
+    grid-area: logi;
+    margin: 0;
+    text-align: center;
+  }
+  .logismos p {
+    margin: 0 0 6px;
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-size: 1.3rem;
+    line-height: 1.4;
+  }
+
+  .greek {
+    font-style: normal;
+  }
+  .handles {
+    grid-area: hand;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 48px;
+    padding-top: 12px;
+  }
+  .handles a {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 2px;
+    text-decoration: none;
+    touch-action: manipulation;
+  }
+  .handles .scrawl {
+    font-size: 1.9rem;
+    transition: color 160ms var(--ease-out);
+  }
+
+  @media (max-width: 720px) {
+    .plate {
+      margin-top: 20px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        'tag1 tag1'
+        'rug  rug'
+        'crest crest'
+        'bw   tag2'
+        'lines lines'
+        'logi logi'
+        'hand hand';
+    }
+    .plate :global(.m1) { left: auto; right: 14%; top: 34%; }
+    .plate :global(.m2) { right: 10%; top: auto; bottom: 7%; }
+    .plate :global(.m3) { left: 12%; top: 29%; }
+    .rug {
+      justify-self: center;
+    }
+    .rug img {
+      width: min(66vw, 260px);
+    }
+    .crest {
+      margin-top: 0;
+    }
+    .bw {
+      margin-top: 0;
+    }
+    .bw img {
+      width: min(36vw, 150px);
+    }
+    .tag-2 {
+      font-size: 1.7rem;
+    }
+    .lines {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+    }
+    .lines li:nth-child(2) {
+      margin-top: 0;
+      justify-self: end;
+      text-align: right;
+    }
+    .lines li:nth-child(2) a {
+      align-items: flex-end;
+    }
+    .logismos p {
+      font-size: 1.15rem;
+    }
+    .handles {
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+  }
+</style>

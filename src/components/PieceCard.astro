@@ -1,0 +1,149 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { SHELVES, fmtDate, pad } from '../data/site';
+import LaceStrip from './LaceStrip.astro';
+import ScrollCorners from './ScrollCorners.astro';
+
+interface Props {
+  piece: CollectionEntry<'pieces'>;
+  i: number;
+}
+const { piece, i } = Astro.props;
+const d = piece.data;
+// Deterministic scatter: same Piece always lands the same way.
+const ROT = [-1.6, 1.1, -0.7, 1.8, -1.2, 0.6, -2, 1.4, -0.4, 0.9];
+const SPAN = [5, 4, 3, 4, 3, 5, 4, 3, 5, 4];
+const DROP = [0, 28, 8, 44, 14, 0, 36, 20, 4, 52];
+const k = (d.no * 7 + i) % ROT.length;
+const style = `--r:${ROT[k]}deg;--span:${SPAN[i % SPAN.length]};--drop:${DROP[k]}px;--i:${i}`;
+// Every 3rd cover gets scrollwork corners; the rest alternate lace trim and tape.
+const ornament = i % 3 === 2 ? 'scroll' : i % 2 === 0 ? 'lace' : 'tape';
+---
+
+<li class="card" data-shelf={d.shelf} style={style}>
+  <a href={`/p/${piece.id}`} class="card-link">
+    <figure class="photo">
+      {ornament === 'scroll' && <ScrollCorners />}
+      {ornament === 'lace' && <LaceStrip style={`rotate:${(k % 2 ? 1 : -1) * 4}deg`} />}
+      {ornament === 'tape' && <span class:list={['tape', { pink: k % 3 === 0 }]} aria-hidden="true"></span>}
+      <Image
+        src={d.cover}
+        alt={d.coverAlt}
+        widths={[320, 480, 720]}
+        sizes="(max-width: 720px) 80vw, 30vw"
+        loading={i < 3 ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </figure>
+    <div class="caption">
+      <p class="mono meta">
+        <span>no. {pad(d.no)}</span>
+        <span class="stamp" lang={d.lang}>{d.lang}</span>
+      </p>
+      <h2 class="title" lang={d.lang}>{d.title}</h2>
+      <p class="mono when">
+        <time datetime={d.date.toISOString()}>{fmtDate(d.date)}</time> · {SHELVES[d.shelf].label}
+      </p>
+    </div>
+  </a>
+</li>
+
+<style>
+  .card {
+    list-style: none;
+    grid-column: span var(--span);
+    margin-top: var(--drop);
+    rotate: var(--r);
+    position: relative;
+  }
+  .card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    touch-action: manipulation;
+    transition:
+      rotate 260ms var(--ease-out),
+      translate 260ms var(--ease-out);
+  }
+  .card-link .photo {
+    transition: box-shadow 260ms var(--ease-out);
+  }
+  .card-link:active {
+    scale: 0.985;
+    transition-duration: 120ms;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .card-link:hover {
+      rotate: calc(var(--r) * -1);
+      translate: 0 -4px;
+    }
+    .card-link:hover .photo {
+      box-shadow: var(--shadow-lift);
+    }
+    .card-link:hover .title {
+      background-size: 100% 62%;
+    }
+  }
+  .card-link:focus-visible {
+    outline-offset: 6px;
+  }
+
+  .caption {
+    position: relative;
+    margin: -10px 10px 0 18px;
+    padding: 12px 14px 12px;
+    line-height: 1.3;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    rotate: calc(var(--r) * -0.8);
+  }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 4px;
+  }
+  .stamp {
+    border: 1px solid currentColor;
+    padding: 0 5px;
+    line-height: 1.45;
+    rotate: -4deg;
+    color: var(--rose-deep);
+  }
+  .title {
+    font-family: var(--f-serif);
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--ink);
+    line-height: 1.28;
+    margin: 0 0 6px;
+    text-wrap: pretty;
+    /* hover highlighter grows in */
+    display: inline;
+    background-image: linear-gradient(104deg, transparent 0.2em, var(--highlight) 0.3em, var(--highlight) calc(100% - 0.2em), transparent);
+    background-size: 0% 62%;
+    background-position: 0 78%;
+    background-repeat: no-repeat;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-size 360ms var(--ease-out);
+  }
+  .when {
+    margin: 8px 0 0;
+    font-size: 0.66rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 720px) {
+    .card {
+      grid-column: 1 / -1;
+      width: min(86%, 420px);
+      justify-self: start;
+      margin-top: 0;
+      rotate: calc(var(--r) * 0.8);
+    }
+    .card:nth-child(even of .card) {
+      justify-self: end;
+    }
+  }
+</style>

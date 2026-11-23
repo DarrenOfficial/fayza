@@ -1,0 +1,69 @@
+---
+import '../styles/global.css';
+import { SITE, LINKS } from '../data/site';
+import LaceHem from '../components/LaceHem.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  lang?: string;
+  noindex?: boolean;
+  type?: 'website' | 'article';
+}
+const { title, description = SITE.description, image, lang = 'en', noindex = false, type = 'website' } = Astro.props;
+const fullTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.author}`;
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const ogImage = image ? new URL(image, SITE.url).href : undefined;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f1e9d8" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title ?? SITE.name} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="author" content={SITE.author} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- fonts: Bunny Fonts (privacy-friendly, no tracking) -->
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.bunny.net/css?family=caveat:400,500,600|cormorant-garamond:400,400i,500,500i,600|jetbrains-mono:400&display=swap"
+    />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">skip to content</a>
+    <header class="site-header">
+      <a class="home hand" href="/" aria-label={`${SITE.name} — home`}>{SITE.name}</a>
+      <nav class="mono" aria-label="site">
+        <a href="/" aria-current={path === '/' ? 'page' : undefined}>wall</a>
+        <a href="/about" aria-current={path === '/about' ? 'page' : undefined}>about</a>
+      </nav>
+      <LaceHem />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer mono">
+      <span>© {new Date().getFullYear()} {SITE.author.toLowerCase()} · {SITE.tagline}</span>
+      <span class="links">
+        {LINKS.map((l) => <a href={l.href} rel="me noopener" target="_blank">{l.label} ↗</a>)}
+      </span>
+    </footer>
+  </body>
+</html>

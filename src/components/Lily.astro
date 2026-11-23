@@ -1,0 +1,24 @@
+---
+/** A pressed calla lily, cut from Abraham Bosse's 1640 engraving (public domain), printed in moss ink. */
+import { Image } from 'astro:assets';
+import plant from '../assets/lilies/plant.png';
+import stem from '../assets/lilies/stem.png';
+import pair from '../assets/lilies/pair.png';
+interface Props { kind: 'plant' | 'stem' | 'pair'; flip?: boolean; class?: string; style?: string }
+const { kind, flip = false, class: cls = '', style = '', ...rest } = Astro.props;
+const src = { plant, stem, pair }[kind];
+---
+
+<Image {...rest} src={src} alt="" aria-hidden="true" class:list={['lily', { flip }, cls]} style={style} widths={[200, 360, 540]} sizes="(max-width: 720px) 50vw, 280px" loading="lazy" decoding="async" />
+
+<style>
+  .lily {
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    height: auto;
+  }
+  .flip {
+    scale: -1 1;
+  }
+</style>
